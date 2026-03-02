@@ -5,7 +5,7 @@
                 <Fold />
             </el-icon>
             <ul class="flexBox">
-                <li v-for="item in selectMenu" :key="item.path" :class="{ 'selected': item.path === route.path }"
+                <li v-for="(item, index) in selectMenu" :key="item.path" :class="{ 'selected': item.path === route.path }"
                     class="tab flexBox">
                     <el-icon size="12px">
                         <component :is="item.icon" />
@@ -15,7 +15,7 @@
                     </router-link>
 
                     <el-icon class="close" size="12px">
-                        <Close />
+                        <Close @click="closeTab(item.path, index)" />
                     </el-icon>
                 </li>
             </ul>
@@ -40,14 +40,44 @@
 
 <script setup lang="ts">
 import { useStore } from 'vuex'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { computed } from 'vue'
 const store = useStore()
-const route = useRoute()
-
+const route = computed(() => useRoute())
+const router = useRouter()
 const selectMenu = computed(() => store.state.menu.selectMenu)
+
 console.log(selectMenu, 'selectMenu');
 
+// 点击关闭
+const closeTab = (item: string, index: number) => {
+    store.commit('selectMenu', item)
+    // 删除的非当前tag
+    if (route.path !== item.path) {
+        return
+    }
+    // 删除的当前tag
+    const selectMenuData = selectMenu.value
+    if (index === selectMenuData.length) {
+        // 删除最后一个tag
+        if (!selectMenuData.length) {
+            router.push('/')
+        } 
+        // 删除中间tag，跳转到后一个tag
+        else {
+            router.push({
+                path: selectMenuData[index - 1].path
+            })
+        }
+    } 
+    // 删除其他未展示的tag，跳转到前一个tag
+    else {
+        router.push({
+            path: selectMenuData[index].path
+        })
+    }
+
+}
 </script>
 
 <style lang="less" scoped>

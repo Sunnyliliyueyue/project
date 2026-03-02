@@ -1,21 +1,41 @@
-const state = {
-    isCollapse: false,
-    selectMenu: [ ]
+interface SelectMenu {
+    describe: string;
+    icon: string;
+    id: string;
+    name: string;
+    path: string;
 }
 
+interface State {
+    isCollapse: boolean;
+    selectMenu: SelectMenu[];
+}
+
+const state: State = {
+    isCollapse: false,
+    selectMenu: []
+};
+
 const mutations = {
-    toggleCollapse(state: any) {
-        state.isCollapse = !state.isCollapse
+    toggleCollapse(state: State) {
+        state.isCollapse = !state.isCollapse;
     },
-    addMenu(state: any, payload: any) {
-        if(state.selectMenu.findIndex((item: any) => item.path === payload.path) === -1) {
-            state.selectMenu.push(payload)
+
+    addMenu(state: State, payload: SelectMenu) {
+        const isExist = state.selectMenu.find(item => item.path === payload.path);
+        if (!isExist) {
+            state.selectMenu.push(payload);
         }
         console.log(state.selectMenu, 'selectMenu');
+    },
+
+    selectMenu(state: any, payload: any) {
+        const index = state.selectMenu.findIndex((val: SelectMenu) => val.path === payload);
+        state.selectMenu.splice(index, 1);
     }
-}
+};
 
 export default {
     state,
     mutations
-}
+};
