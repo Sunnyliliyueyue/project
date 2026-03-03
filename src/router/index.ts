@@ -6,6 +6,7 @@ import Admin from '../views/auth/admin/index.vue'
 import Group from '../views/auth/group/index.vue'
 import Staff from '../views/vppz/staff/index.vue'
 import Order from '../views/vppz/order/index.vue'
+import Register from '../views/reginster/index.vue'
 
 const routes: RouteRecordRaw[] = [
     { 
@@ -58,6 +59,10 @@ const routes: RouteRecordRaw[] = [
     path: '/login',
     component: Login
   },
+  {
+    path: '/register',
+    component: Register
+  }
 ];
 
 const router = createRouter({
