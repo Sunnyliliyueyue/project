@@ -8,7 +8,8 @@
             </template>
             <div class="jump-link">
                 <el-link type="primary" @click="handleRegisterClick">{{ formType ? '返回登录' : '注册账号' }}</el-link>
-                <el-form :model="form" style="max-width: 600px;" class="demo-ruleForm" :rules="rules">
+                <el-form :model="form" ref="loginFormRef" style="max-width: 600px;" class="demo-ruleForm"
+                    :rules="rules">
                     <el-form-item prop="username">
                         <el-input v-model="form.username" :prefix-icon="Avatar" placeholder="手机号"></el-input>
                     </el-form-item>
@@ -24,7 +25,8 @@
                         </el-input>
                     </el-form-item>
                     <el-form-item>
-                        <el-button type="primary" @click="submitForm">{{ formType ? '注册' : '登录' }}</el-button>
+                        <el-button type="primary" @click="submitForm(loginFormRef)">{{ formType ? '注册' : '登录'
+                        }}</el-button>
                     </el-form-item>
                 </el-form>
             </div>
@@ -34,8 +36,10 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { getCode } from '../../api'
+import { getCode, userAuthentication, login } from '../../api'
 import { Avatar, Lock } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+const router = useRouter()
 const imgUrl = new URL('../../../public/login-head.png', import.meta.url).href
 const formType = ref(0)
 const flag = ref(true)
@@ -51,7 +55,7 @@ const countdown = reactive({
 const handleRegisterClick = () => {
     formType.value = formType.value ? 0 : 1
 }
-
+const loginFormRef = ref()
 const countdownChange = () => {
     // 验证手机号
     if (!/^1[3456789]\d{9}$/.test(form.username) || !form.username) {
@@ -62,17 +66,17 @@ const countdownChange = () => {
     } else {
         if (flag.value) {
             flag.value = false
-            const timer = setInterval(()=>{
+            const timer = setInterval(() => {
                 countdown.count--
                 countdown.validText = `${countdown.count}s后重新获取`
-                if(countdown.count <= 0){
+                if (countdown.count <= 0) {
                     clearInterval(timer)
                     flag.value = true
                     countdown.count = 60
                     countdown.validText = '获取验证码'
                 }
-            },1000) 
-            getCode({tel: form.username}).then(res => {
+            }, 1000)
+            getCode({ tel: form.username }).then(res => {
                 console.log(res, 'res');
                 ElMessage({
                     message: '验证码已发送',
@@ -84,14 +88,14 @@ const countdownChange = () => {
                     type: 'error',
                 })
             })
-        }else {
+        } else {
             return
         }
     }
 
 }
 const validateUser = (rule, value, callback) => {
-    if (value === ''){
+    if (value === '') {
         callback(new Error('请输入手机号'))
     } else {
         const phoneReg = /^1[3456789]\d{9}$/
@@ -99,7 +103,7 @@ const validateUser = (rule, value, callback) => {
     }
 }
 const validatePassword = (rule, value, callback) => {
-    if (value === ''){
+    if (value === '') {
         callback(new Error('请输入密码'))
     } else {
         const reg = /^[a-zA-Z0-9_]{4,16}$/
@@ -110,8 +114,60 @@ const rules = reactive({
     username: [{ validator: validateUser, trigger: 'blur' }],
     password: [{ validator: validatePassword, trigger: 'blur' }]
 })
-const submitForm = () => {
-    console.log(form)
+const submitForm = async (formEl) => {
+    if (!formEl) return
+    await formEl.validate((valid, fields) => {
+        if (valid) {
+            if (formType.value === 1) {
+                userAuthentication({
+                    userName: form.username,
+                    validCode: form.validCode,
+                    passWord: form.password
+                }).then(res => {
+                    console.log(res, 'res');
+                    ElMessage({
+                        message: '注册成功',
+                        type: 'success',
+                    })
+                }).catch(err => {
+                    ElMessage({
+                        message: '注册失败',
+                        type: 'error',
+                    })
+                })
+            } else {
+                login({
+                    userName: form.username,
+                    passWord: form.password
+                }).then(res => {
+                    ElMessage({
+                        message: '登录成功',
+                        type: 'success',
+                    })
+                    const token = res.data.token || res.data.data?.token
+                    if (token) {
+                        localStorage.setItem('pz_token', token)
+                        // 登录成功后，将 用户信息 存储到 localStorage 中
+                        localStorage.setItem('userInfo', JSON.stringify(res.data.userInfo || res.data.data?.userInfo))
+                        // 跳转到主页
+                        router.push('/')
+                    } else {
+                        ElMessage({
+                            message: '登录失败：未获取到 token',
+                            type: 'error',
+                        })
+                    }
+                }).catch(err => {
+                    ElMessage({
+                        message: '登录失败',
+                        type: 'error',
+                    })
+                })
+            }
+        } else {
+            console.log('error submit!', fields)
+        }
+    })
 }
 </script>
 

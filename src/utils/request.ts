@@ -25,6 +25,14 @@ http.interceptors.response.use(function (response) {
             message: response.data.msg || '请求失败',
         })
     }
+    if(response.data.code === -2) {
+      localStorage.removeItem('pz_token')
+      localStorage.removeItem('userInfo')
+      window.location.href = window.location.origin
+      ElMessage.warning({
+          message: response.data.msg || '登录过期，请重新登录',
+      })
+    }
     return response;
   }, function (error) {
     // 超出 2xx 范围的状态码都会触发该函数。
